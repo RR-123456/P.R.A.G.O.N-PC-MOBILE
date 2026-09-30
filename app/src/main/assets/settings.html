@@ -1,0 +1,75 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pragon Settings</title>
+<style>
+:root{--cyan:#00d4ff;--bg:#0a0a0f;--text:#e8eaf0;--muted:rgba(200,210,230,.45);--green:#33ffb0;--red:#ef4444}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{padding:calc(14px + env(safe-area-inset-top,0px)) 16px 30px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.top b{flex:1;font:900 16px Orbitron,sans-serif;letter-spacing:2px;color:var(--cyan);text-shadow:0 0 16px rgba(0,212,255,.4)}
+.back{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);color:var(--cyan);border-radius:10px;padding:8px 14px;font-size:12px;letter-spacing:1px;cursor:pointer}
+.st{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:16px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red)}.dot.ok{background:var(--green);box-shadow:0 0 8px var(--green)}
+h3{font:700 11px Orbitron,sans-serif;letter-spacing:2px;color:var(--cyan);margin:22px 0 8px}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(0,212,255,.15);border-radius:14px;padding:12px}
+input{width:100%;padding:11px 13px;margin-bottom:8px;background:rgba(255,255,255,.03);border:1.5px solid rgba(0,212,255,.15);border-radius:12px;color:var(--text);font-size:14px;outline:none}
+input:focus{border-color:var(--cyan)}
+.btn{width:100%;padding:12px;border-radius:12px;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);color:var(--cyan);font:700 11px Orbitron,sans-serif;letter-spacing:2px;cursor:pointer}
+.btn:active{background:rgba(0,212,255,.25)}.btn.red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.4);color:var(--red)}
+.or{text-align:center;color:var(--muted);font-size:11px;margin:10px 0}
+.perm{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,212,255,.08)}.perm:last-child{border:0}
+.perm span{flex:1;font-size:13px}.pill{font:700 10px Orbitron,sans-serif;letter-spacing:1px;padding:4px 9px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--red)}.pill.on{background:rgba(51,255,176,.12);color:var(--green)}
+.perm .btn{width:auto;padding:8px 12px;font-size:10px}
+</style></head><body>
+<div class="top"><b>SETTINGS</b><button class="back" onclick="N.close()">← BACK</button></div>
+<div class="st"><span class="dot" id="dot"></span><span id="stt">Not paired yet</span></div>
+
+<h3>CONNECT TO PC</h3>
+<div class="card">
+  <button class="btn" onclick="N.scanQr()">SCAN QR FROM PRAGON</button>
+  <div class="or">— or enter it manually —</div>
+  <input id="host" placeholder="PC address, e.g. 192.168.1.2:8000" autocomplete="off">
+  <input id="key" placeholder="Pairing key shown under the QR" autocomplete="off" autocapitalize="characters">
+  <button class="btn" onclick="N.connect(host.value.trim(),key.value.trim())">CONNECT</button>
+</div>
+
+<h3>AI FOR STANDALONE MODE</h3>
+<div class="card">
+  <div class="st" style="margin-bottom:10px"><span class="dot" id="aidot"></span><span id="aist">No key yet</span></div>
+  <input id="aikey" type="password" placeholder="Your Gemini API key (optional if a PC is paired)" autocomplete="off">
+  <input id="aimodel" placeholder="Model (default gemini-2.5-flash)" autocomplete="off">
+  <button class="btn" onclick="N.saveAi(aikey.value.trim(),aimodel.value.trim());aikey.value='';setTimeout(pmAi,200)">SAVE</button>
+  <div style="height:8px"></div>
+  <button class="btn red" onclick="N.clearAiKey();setTimeout(pmAi,200)">REMOVE MY KEY</button>
+  <div class="or" style="margin:10px 0 0">Your key is used first. If empty, the app uses the key from your paired PC.</div>
+</div>
+
+<h3>PERMISSIONS (needed once)</h3>
+<div class="card">
+  <div class="perm"><span>Accessibility service</span><i class="pill" id="p1">OFF</i><button class="btn" onclick="N.openA11y()">ENABLE</button></div>
+  <div class="perm"><span>Display over other apps</span><i class="pill" id="p2">OFF</i><button class="btn" onclick="N.openOverlay()">ALLOW</button></div>
+  <div class="perm"><span>Battery: don't restrict</span><i class="pill" id="p3">OFF</i><button class="btn" onclick="N.openBattery()">ALLOW</button></div>
+</div>
+
+<h3>DANGER ZONE</h3>
+<button class="btn red" id="fg" onclick="fgTap()">DISCONNECT AND FORGET THIS PC</button>
+
+<script>
+// Bridge: the Android app provides window.PragonNative; in a browser this mock lets you preview the page.
+const N=window.PragonNative||{
+  getState:()=>JSON.stringify({paired:true,host:'192.168.1.2:8000',status:'Connected to Pragon on your PC',a11y:true,overlay:false,battery:true}),
+  scanQr(){alert('(app) opens the QR scanner')},connect(h,k){alert('(app) pair with '+h+' key '+k)},
+  openA11y(){alert('(app) opens Accessibility settings')},openOverlay(){alert('(app) opens overlay permission')},openBattery(){alert('(app) opens battery permission')},
+  getAi:()=>JSON.stringify({own:false,pc:true,model:'gemini-2.5-flash',hint:''}),saveAi(k,m){alert('(app) saves AI settings')},clearAiKey(){alert('(app) removes key')},
+  forget(){alert('(app) forgets this PC')},close(){history.length>1?history.back():window.close()}
+};
+window.pmRefresh=function(){const s=JSON.parse(N.getState());
+  document.getElementById('dot').classList.toggle('ok',s.paired);document.getElementById('stt').textContent=s.status||(s.paired?'Paired':'Not paired yet');
+  if(s.host&&!host.value)host.value=s.host;
+  [['p1',s.a11y],['p2',s.overlay],['p3',s.battery]].forEach(([i,v])=>{const e=document.getElementById(i);e.textContent=v?'ON':'OFF';e.classList.toggle('on',!!v);});};
+let fgArm=0;function fgTap(){const b=document.getElementById('fg');if(fgArm){fgArm=0;b.textContent='DISCONNECT AND FORGET THIS PC';N.forget();return;}fgArm=1;b.textContent='TAP AGAIN TO CONFIRM';setTimeout(()=>{fgArm=0;b.textContent='DISCONNECT AND FORGET THIS PC';},3000);}
+let aiInit=false;
+window.pmAi=function(){const a=JSON.parse(N.getAi());
+  document.getElementById('aidot').classList.toggle('ok',a.own||a.pc);
+  document.getElementById('aist').textContent=a.own?('Using your key '+a.hint):(a.pc?"Using your PC's key":'No key yet - add yours or pair a PC');
+  if(!aiInit){aiInit=true;document.getElementById('aimodel').value=a.model;}};
+pmRefresh();pmAi();setInterval(pmRefresh,1500);
+</script></body></html>
